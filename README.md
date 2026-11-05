@@ -1,3 +1,7 @@
+# Veterinary Pet Management
+
+A web application for managing pets, veterinarians, and appointments.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
@@ -35,6 +39,8 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+## Team Members
 
-Team members
-Jairo Castro Castillo - Manuela Rodriguez Cardenas - Valeria Rodriguez Cardenas
+- Jairo Castro Castillo
+- Manuela Rodriguez Cardenas
+- Valeria Rodriguez Cardenas
