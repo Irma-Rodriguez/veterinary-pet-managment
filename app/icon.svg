@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PawHaven logo">
+  <!-- Rounded "haven" shape: a house-like shield in brand teal -->
+  <path d="M32 4 7 18.5V44c0 9 7 16 16 16h18c9 0 16-7 16-16V18.5Z" fill="#0f766e"/>
+  <!-- Paw -->
+  <g fill="#ffffff">
+    <ellipse cx="20.5" cy="31" rx="3.6" ry="4.6"/>
+    <ellipse cx="27.5" cy="24.5" rx="3.6" ry="4.6"/>
+    <ellipse cx="36.5" cy="24.5" rx="3.6" ry="4.6"/>
+    <ellipse cx="43.5" cy="31" rx="3.6" ry="4.6"/>
+    <path d="M32 33.5c-5.6 0-11 6.4-11 11.2 0 3.1 2.4 5.1 5.5 5.1 2.2 0 3.6-1.1 5.5-1.1s3.3 1.1 5.5 1.1c3.1 0 5.5-2 5.5-5.1 0-4.8-5.4-11.2-11-11.2Z"/>
+  </g>
+  <!-- Medical badge in brand orange -->
+  <circle cx="51" cy="13" r="10" fill="#f97316" stroke="#ffffff" stroke-width="3"/>
+  <path d="M51 8.5v9M46.5 13h9" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+</svg>
