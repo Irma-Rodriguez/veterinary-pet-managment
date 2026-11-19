@@ -81,20 +81,27 @@ const email = z
 
 // Public registration. There is intentionally NO `role` field:
 // every self-registered account is an owner.
-export const RegisterSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, { error: "Name must be at least 2 characters." })
-    .max(100, { error: "Name must be 100 characters or less." }),
-  email,
-  password: z
-    .string()
-    .min(8, { error: "Password must be at least 8 characters." })
-    .max(72, { error: "Password must be 72 characters or less." })
-    .regex(/[a-zA-Z]/, { error: "Password must contain a letter." })
-    .regex(/[0-9]/, { error: "Password must contain a number." }),
-});
+export const RegisterSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(2, { error: "Name must be at least 2 characters." })
+      .max(100, { error: "Name must be 100 characters or less." }),
+    email,
+    // bcrypt only uses the first 72 bytes, so longer passwords are rejected.
+    password: z
+      .string()
+      .min(8, { error: "Password must be at least 8 characters." })
+      .max(72, { error: "Password must be 72 characters or less." })
+      .regex(/[a-zA-Z]/, { error: "Password must contain a letter." })
+      .regex(/[0-9]/, { error: "Password must contain a number." }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    error: "Passwords don't match.",
+    path: ["confirmPassword"],
+  });
 
 export const LoginSchema = z.object({
   email,
