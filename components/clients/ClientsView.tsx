@@ -1,45 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import type { Client } from "@/lib/data/clients";
 
-type Client = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  petsCount: number;
+type ClientsViewProps = {
+  clients: Client[];
+  totalClients: number;
+  totalPets: number;
 };
-
-const DEMO_CLIENTS: Client[] = [
-  {
-    id: "1",
-    name: "Maria Lopez",
-    email: "maria@example.com",
-    phone: "(208) 555-0101",
-    petsCount: 2,
-  },
-  {
-    id: "2",
-    name: "Carlos Perez",
-    email: "carlos@example.com",
-    phone: "(208) 555-0102",
-    petsCount: 1,
-  },
-  {
-    id: "3",
-    name: "Ana Torres",
-    email: "ana@example.com",
-    phone: "(208) 555-0103",
-    petsCount: 3,
-  },
-  {
-    id: "4",
-    name: "Sofia Ramirez",
-    email: "sofia@example.com",
-    phone: "(208) 555-0104",
-    petsCount: 0,
-  },
-];
 
 function getInitials(name: string) {
   return name
@@ -50,26 +19,103 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function ClientsView() {
+export function ClientsView({
+  clients,
+  totalClients,
+  totalPets,
+}: ClientsViewProps) {
+  const [clientList, setClientList] = useState(clients);
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const filteredClients = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    if (!query) return DEMO_CLIENTS;
+    if (!query) return clientList;
 
-    return DEMO_CLIENTS.filter(
+    return clientList.filter(
       (client) =>
         client.name.toLowerCase().includes(query) ||
         client.email.toLowerCase().includes(query),
     );
-  }, [search]);
+  }, [search, clientList]);
 
-  const totalPets = DEMO_CLIENTS.reduce(
-    (total, client) => total + client.petsCount,
-    0,
-  );
+  // Open edit modal
+  function handleEdit(client: Client) {
+    setEditingClient(client);
+    setEditName(client.name);
+    setEditPhone(client.phone || "");
+    setError("");
+  }
+
+  // Close edit modal
+  function closeEditModal() {
+    if (saving) return;
+    setEditingClient(null);
+    setError("");
+  }
+
+  // Save changes
+  async function handleUpdateClient(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editingClient) return;
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/clients/${editingClient.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: editName.trim(),
+          phone: editPhone.trim() || null,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message || "Could not update client information.",
+        );
+      }
+
+      const updatedClient: Client = {
+        ...editingClient,
+        ...data.client,
+      };
+
+      setClientList((previousClients) =>
+        previousClients.map((client) =>
+          client.id === updatedClient.id ? updatedClient : client,
+        ),
+      );
+
+      setSelectedClient((previous) =>
+        previous?.id === updatedClient.id ? updatedClient : previous,
+      );
+
+      setEditingClient(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6 lg:py-12">
@@ -94,9 +140,8 @@ export function ClientsView() {
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
             Total clients
           </p>
-
           <p className="mt-2 font-heading text-3xl font-extrabold text-primary-700 dark:text-primary-300">
-            {DEMO_CLIENTS.length}
+            {totalClients}
           </p>
         </div>
 
@@ -104,7 +149,6 @@ export function ClientsView() {
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
             Total pets
           </p>
-
           <p className="mt-2 font-heading text-3xl font-extrabold text-accent-700 dark:text-accent-300">
             {totalPets}
           </p>
@@ -114,13 +158,24 @@ export function ClientsView() {
       {/* Clients section */}
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="border-b border-slate-200 p-5 dark:border-slate-800">
-          <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-slate-100">
-            Registered clients
-          </h2>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-slate-100">
+                Registered clients
+              </h2>
 
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Search and access client information.
-          </p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Search and access client information.
+              </p>
+            </div>
+
+            <a
+              href="/register"
+              className="inline-flex items-center justify-center rounded-lg bg-primary-700 px-5 py-3 font-semibold text-white transition hover:bg-primary-900"
+            >
+              + New Client
+            </a>
+          </div>
 
           {/* Search */}
           <div className="mt-5">
@@ -170,7 +225,7 @@ export function ClientsView() {
                   </td>
 
                   <td className="px-5 py-4 text-slate-600 dark:text-slate-400">
-                    {client.phone}
+                    {client.phone || "Not provided"}
                   </td>
 
                   <td className="px-5 py-4">
@@ -179,14 +234,25 @@ export function ClientsView() {
                     </span>
                   </td>
 
+                  {/* Actions */}
                   <td className="px-5 py-4">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedClient(client)}
-                      className="font-semibold text-primary-700 hover:underline dark:text-primary-300"
-                    >
-                      View details
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedClient(client)}
+                        className="font-semibold text-primary-700 hover:underline dark:text-primary-300"
+                      >
+                        View details
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(client)}
+                        className="font-semibold text-accent-700 hover:underline dark:text-accent-300"
+                      >
+                        Edit
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -213,42 +279,54 @@ export function ClientsView() {
                   </p>
 
                   <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                    {client.phone}
+                    {client.phone || "Not provided"}
                   </p>
 
                   <p className="mt-2 text-sm font-semibold text-primary-700 dark:text-primary-300">
                     {client.petsCount} pets
                   </p>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedClient(client)}
-                    className="mt-3 text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300"
-                  >
-                    View details
-                  </button>
+                  <div className="mt-3 flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedClient(client)}
+                      className="text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300"
+                    >
+                      View details
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(client)}
+                      className="text-sm font-semibold text-accent-700 hover:underline dark:text-accent-300"
+                    >
+                      Edit
+                    </button>
+                  </div>
                 </div>
               </div>
             </article>
           ))}
         </div>
 
-        {/* Empty search state */}
+        {/* Empty state */}
         {filteredClients.length === 0 && (
           <div className="p-10 text-center">
             <p className="font-semibold text-slate-900 dark:text-slate-100">
-              No clients found
+              {search.trim() ? "No clients found" : "No registered clients yet"}
             </p>
 
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-              Try searching with another name or email.
+              {search.trim()
+                ? "Try searching with another name or email."
+                : "Registered pet owners will appear here."}
             </p>
           </div>
         )}
 
         {/* Results count */}
         <div className="border-t border-slate-200 px-5 py-4 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-400">
-          Showing {filteredClients.length} of {DEMO_CLIENTS.length} clients
+          Showing {filteredClients.length} of {totalClients} clients
         </div>
       </section>
 
@@ -279,7 +357,7 @@ export function ClientsView() {
                 aria-label="Close details"
                 className="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                ×
+                &times;
               </button>
             </div>
 
@@ -288,7 +366,6 @@ export function ClientsView() {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Full name
                 </p>
-
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {selectedClient.name}
                 </p>
@@ -298,7 +375,6 @@ export function ClientsView() {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Email
                 </p>
-
                 <p className="break-all font-semibold text-slate-900 dark:text-slate-100">
                   {selectedClient.email}
                 </p>
@@ -308,9 +384,8 @@ export function ClientsView() {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Phone
                 </p>
-
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {selectedClient.phone}
+                  {selectedClient.phone || "Not provided"}
                 </p>
               </div>
 
@@ -318,7 +393,6 @@ export function ClientsView() {
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Associated pets
                 </p>
-
                 <p className="font-semibold text-primary-700 dark:text-primary-300">
                   {selectedClient.petsCount} pets
                 </p>
@@ -332,6 +406,140 @@ export function ClientsView() {
             >
               Close
             </button>
+          </section>
+        </div>
+      )}
+
+      {/* Edit client modal */}
+      {editingClient && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4"
+          onClick={closeEditModal}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-client-title"
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2
+                id="edit-client-title"
+                className="font-heading text-xl font-bold text-primary-900 dark:text-primary-100"
+              >
+                Edit client
+              </h2>
+
+              <button
+                type="button"
+                onClick={closeEditModal}
+                disabled={saving}
+                aria-label="Close edit form"
+                className="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100 disabled:opacity-50 dark:hover:bg-slate-800"
+              >
+                &times;
+              </button>
+            </div>
+
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+              Update the client&apos;s information below.
+            </p>
+
+            <form onSubmit={handleUpdateClient} className="mt-6 space-y-5">
+              {/* Name */}
+              <div>
+                <label
+                  htmlFor="edit-client-name"
+                  className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Full name
+                </label>
+
+                <input
+                  id="edit-client-name"
+                  type="text"
+                  required
+                  minLength={2}
+                  maxLength={100}
+                  value={editName}
+                  onChange={(event) => setEditName(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label
+                  htmlFor="edit-client-email"
+                  className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Email
+                </label>
+
+                <input
+                  id="edit-client-email"
+                  type="email"
+                  value={editingClient.email}
+                  disabled
+                  className="w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                />
+
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Email cannot be changed.
+                </p>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label
+                  htmlFor="edit-client-phone"
+                  className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Phone
+                </label>
+
+                <input
+                  id="edit-client-phone"
+                  type="tel"
+                  maxLength={30}
+                  value={editPhone}
+                  onChange={(event) => setEditPhone(event.target.value)}
+                  placeholder="Enter phone number"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                />
+              </div>
+
+              {/* Error */}
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                >
+                  {error}
+                </p>
+              )}
+
+              {/* Buttons */}
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={saving}
+                  className="rounded-lg border border-slate-300 px-5 py-3 font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={saving || editName.trim().length < 2}
+                  className="rounded-lg bg-primary-700 px-5 py-3 font-semibold text-white transition hover:bg-primary-900 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {saving ? "Saving..." : "Save changes"}
+                </button>
+              </div>
+            </form>
           </section>
         </div>
       )}

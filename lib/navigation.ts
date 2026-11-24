@@ -5,8 +5,14 @@ import type { Role } from "./definitions";
 export const NAV_BY_ROLE: Record<Role, { href: string; label: string }[]> = {
   owner: [{ href: "/pets", label: "My pets" }],
   vet: [{ href: "/schedule", label: "My schedule" }],
-  receptionist: [{ href: "/front-desk", label: "Front desk" }],
-  admin: [{ href: "/admin/staff", label: "Staff" }],
+  receptionist: [
+    { href: "/front-desk", label: "Front desk" },
+    { href: "/clients", label: "Clients" },
+  ],
+  admin: [
+    { href: "/admin/staff", label: "Staff" },
+    { href: "/clients", label: "Clients" },
+  ],
 };
 
 export const ROLE_LABELS: Record<Role, string> = {
